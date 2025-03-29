@@ -1,0 +1,29 @@
+{
+  "log_channel_id": -1,
+  "ticket_categories": [
+    ["⛔", "Hiba bejelentése"],
+    ["🏆", "TGF"],
+    ["🤡", "Csaló Jelentése"],
+    ["🎁", "Jutalom átvétele"],
+    ["❓", "Egyéb kérdések"],
+    ["🤝", "Partnerkedés"]
+  ],
+  "join_channel_id": -1,
+  "join_autorole_id": -1,
+  "ticket_support_role_ids": [],
+  "emergency_admin_user_ids": [],
+  "partner_manager_role_id": -1,
+  "reaction_role_message_id": -1,
+  "reaction_roles": {},
+  "transcript_channel_id": -1,
+  "ticket_category_id": -1,
+  "suggestion_channel_id": -1,
+  "players_status_channel_id": -1,
+  "ping_status_channel_id": -1,
+  "minecraft_server_domain_ip": "example.com",
+  "private_minecraft_server_ip": "number.number.number.number",
+  "private_minecraft_server_port": 25565,
+  "screenshot_command_enabled": false,
+  "server_name": "",
+  "token": ""
+}
