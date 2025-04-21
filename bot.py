@@ -152,7 +152,7 @@ async def update_giveaways():
             await message.edit(embed=embed)
             await asyncio.sleep(1)
 @bot.event
-async def on_member_join(member):
+async def on_member_join(member: discord.Member):
     if not join_channel_id == -1:
         embed = discord.Embed(title=f'Welcome, {member.name}', color=discord.Colour.red(), description=f"👋 Welcome to the {server_name} discord server, **{member.display_name}**!\nWe hope you'll enjoy your time on our server!")
         if not bot.user.avatar == None:
@@ -189,9 +189,20 @@ async def on_ready():
     print(f'{server_name} bot online')
     update_giveaways.start()
 
-if not server_ip == 'example.com':
-    @bot.event
-    async def on_message(message):
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    if interaction.type == discord.InteractionType.application_command:
+        await discord.Bot.on_interaction(bot, interaction)
+        return
+    custom_id = interaction.data['custom_id']
+    if custom_id == 'ticket':
+        await ticket(interaction, interaction.data['values'][0])
+    elif custom_id.startswith('ticket_') and custom_id.endswith('_close_button'):
+        await close_ticket(interaction)
+
+@bot.event
+async def on_message(message):
+    if not server_ip == 'example.com':
         if not message.author.bot:
             if any(i in message.content.lower() for i in [' ip', ' ipje', ' ip ']) and message.content.endswith('?'):
                 await message.reply(f'The server IP is: **{server_ip}**')
@@ -329,6 +340,29 @@ async def on_bulk_message_delete(messages):
     except:
         traceback.print_exc()
 
+
+async def on_reaction_add(emoji, message, user: discord.Member):
+    global settings
+    if not user.bot and message.id == settings['reaction_role_message_id'] and emoji.name in reaction_roles:
+        await user.add_roles(discord.utils.get(message.guild.roles, id=reaction_roles[emoji.name]['role_id']))
+
+async def on_reaction_remove(emoji, message, user: discord.Member):
+    global settings
+    if not user.bot and message.id == settings['reaction_role_message_id'] and emoji.name in reaction_roles:
+        await user.remove_roles(discord.utils.get(message.guild.roles, id=reaction_roles[emoji.name]['role_id']))
+
+@bot.event
+async def on_raw_reaction_add(payload): # trigger on_reaction_add for all messages not just cached ones.
+    channel = await bot.fetch_channel(payload.channel_id)
+    await on_reaction_add(payload.emoji, await channel.fetch_message(payload.message_id), discord.utils.get(channel.guild.members,id=payload.user_id))
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    channel = await bot.fetch_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
+    user = discord.utils.get(channel.guild.members,id=payload.user_id)
+    await on_reaction_remove(payload.emoji, message, user)
+
 async def end_giveaway(n, giveaway):
     message = await bot.get_channel(giveaway['message'].channel.id).fetch_message(giveaway["message_id"])
     participant_mentions = [
@@ -417,28 +451,6 @@ async def send_reaction_role_message(interaction: discord.Interaction, channel: 
 
     with open('settings.json', 'w') as file:
         file.write(json.dumps(settings, indent=4))
-
-async def on_reaction_add(emoji, message, user: discord.Member):
-    global settings
-    if not user.bot and message.id == settings['reaction_role_message_id'] and emoji.name in reaction_roles:
-        await user.add_roles(discord.utils.get(message.guild.roles, id=reaction_roles[emoji.name]['role_id']))
-
-async def on_reaction_remove(emoji, message, user: discord.Member):
-    global settings
-    if not user.bot and message.id == settings['reaction_role_message_id'] and emoji.name in reaction_roles:
-        await user.remove_roles(discord.utils.get(message.guild.roles, id=reaction_roles[emoji.name]['role_id']))
-
-@bot.event
-async def on_raw_reaction_add(payload): # trigger on_reaction_add for all messages not just cached ones.
-    channel = await bot.fetch_channel(payload.channel_id)
-    await on_reaction_add(payload.emoji, await channel.fetch_message(payload.message_id), discord.utils.get(channel.guild.members,id=payload.user_id))
-
-@bot.event
-async def on_raw_reaction_remove(payload):
-    channel = await bot.fetch_channel(payload.channel_id)
-    message = await channel.fetch_message(payload.message_id)
-    user = discord.utils.get(channel.guild.members,id=payload.user_id)
-    await on_reaction_remove(payload.emoji, message, user)
 
 @bot.slash_command()
 async def suggest(interaction: discord.Interaction, suggestion):
@@ -579,17 +591,6 @@ async def send_ticket_message(interaction: discord.Interaction, channel: discord
     else:
         await interaction.response.send_message("You don't have permission to use this command!", ephemeral=True)
 
-@bot.event
-async def on_interaction(interaction: discord.Interaction):
-    if interaction.type == discord.InteractionType.application_command:
-        await discord.Bot.on_interaction(bot, interaction)
-        return
-    custom_id = interaction.data['custom_id']
-    if custom_id == 'ticket':
-        await ticket(interaction, interaction.data['values'][0])
-    elif custom_id.startswith('ticket_') and custom_id.endswith('_close_button'):
-        await close_ticket(interaction)
-
 @bot.slash_command()
 async def warn(interaction: discord.Interaction, member: discord.Member, *, reason='Reason not provided'):
     if interaction.user.guild_permissions.moderate_members:
@@ -703,7 +704,7 @@ async def ban(interaction: discord.Interaction, member: discord.Member, reason=N
 @bot.slash_command()
 async def unban(interaction: discord.Interaction, member_id: int, reason=None):
     if interaction.user.guild_permissions.ban_members and interaction.user.guild_permissions.administrator:
-        banned_users = await interaction.guild.bans()
+        banned_users = interaction.guild.bans()
 
         for ban_entry in banned_users:
             user = ban_entry.user
@@ -739,8 +740,8 @@ async def mute(interaction: discord.Interaction, member: discord.Member, time):
         await interaction.response.send_message("You don't have permission to use this command!", ephemeral=True)
 
 @bot.slash_command()
-async def userinfo(interaction: discord.Interaction, tag: discord.Member = None):
-    member = tag or interaction.user
+async def userinfo(interaction: discord.Interaction, member: discord.Member = None):
+    member = member or interaction.user
     roles = [i.name for i in member.roles]
     roles.remove("@everyone")
 
@@ -784,10 +785,12 @@ async def userinfo(interaction: discord.Interaction, tag: discord.Member = None)
 async def ui(interaction: discord.Interaction, member: discord.Member = None):
     await userinfo(interaction, member)
 
-if not server_ip == 'example.com':
-    @bot.slash_command()
-    async def ip(interaction):
+@bot.slash_command()
+async def ip(interaction):
+    if not server_ip == 'example.com':
         await interaction.response.send_message(f'Server IP: **{server_ip}**')
+    else:
+        await interaction.response.send_message("This feature is not enabled.")
 
 @bot.slash_command()
 async def help(interaction: discord.Interaction, topic=None):
