@@ -42,7 +42,6 @@ server_ip =  settings["minecraft_server_domain_ip"]
 private_server_ip = settings["private_minecraft_server_ip"]
 private_server_port = settings["private_minecraft_server_port"]
 server_name = settings["server_name"]
-screenshot_command_enabled = settings['screenshot_command_enabled']
 
 giveaways = []
 global players_before
@@ -156,7 +155,7 @@ async def on_ready():
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name=f"{server_name} | /help"))
     print(f'{server_name} bot online')
     update_giveaways.start()
-    # await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name=f"{server_name} | /help"))
+
 if not server_ip == 'example.com':
     @bot.event
     async def on_message(message):
@@ -340,19 +339,6 @@ async def greroll(interaction, message_id):
     else:
         await interaction.response.send_message("Nincs jogod használni ezt a parancsot!", ephemeral=True)
 
-# @bot.slash_command()
-# async def árverés(interaction: discord.Interaction, tárgy: str, mennyiség: int, ár: int):
-#     if not isinstance(mennyiség, int) or not isinstance(ár, int):
-#         await interaction.response.send_message("A mennyiségnek és az árnak egy számnak kell lennie!", ephemeral=True)
-#     embed = discord.Embed(title="Árverési Információk")
-#     embed.add_field(name="Eladó", value=interaction.user.mention)
-#     embed.add_field(name="Tárgy", value=tárgy)
-#     embed.add_field(name="Mennyiség", value=str(mennyiség))
-#     embed.add_field(name="Ár", value="$"+str(ár))
-#     embed.set_footer(icon_url=bot.user.avatar.url, text=f"{server_name} Bot")
-#     auction_channel = discord.utils.get(interaction.guild.channels, id=auction_channel_id)
-#     await auction_channel.send(content=f"{interaction.user.display_name} kirakott a piacra egy új árverést!", embed=embed)
-#     await interaction.response.send_message("Árverés sikeresen kitéve!")
 @bot.slash_command()
 async def giveaway(interaction: discord.Interaction, duration: str, winners: int, prize: str):
     if interaction.user.guild_permissions.administrator:
@@ -374,6 +360,7 @@ async def giveaway(interaction: discord.Interaction, duration: str, winners: int
             traceback.print_exc()
     else:
         await interaction.response.send_message("Nincs jogod használni ezt a parancsot!", ephemeral=True)
+
 @bot.slash_command()
 async def send_reaction_role_message(interaction, channel: discord.channel.TextChannel):
     global settings
@@ -386,38 +373,40 @@ async def send_reaction_role_message(interaction, channel: discord.channel.TextC
         embed.set_footer(text=f"{server_name} Bot", icon_url=bot.user.avatar.url)
     else:
         embed.set_footer(text=f"{server_name} Bot")
+
     message: discord.Message = await channel.send(embed=embed)
     await interaction.response.send_message("Üzenet elküldve a megadott csatornába!\nÜzenet ID: " + str(message.id), ephemeral=True)
+
     for reaction_role_emoji, _ in reaction_roles.items():
         await message.add_reaction(reaction_role_emoji)
+
     settings['reaction_role_message_id'] = message.id
+
     with open('settings.json', 'w') as file:
         file.write(json.dumps(settings, indent=4))
+
 async def on_reaction_add(emoji, message, user: discord.Member):
     global settings
     if not user.bot and message.id == settings['reaction_role_message_id'] and emoji.name in reaction_roles:
         await user.add_roles(discord.utils.get(message.guild.roles, id=reaction_roles[emoji.name]['role_id']))
-    # elif message.id == koth_message_id:
-    #     role = discord.utils.get(message.guild.roles, id=koth_ping_role_id)
-    #     await user.add_roles(role)
 
 async def on_reaction_remove(emoji, message, user: discord.Member):
     global settings
     if not user.bot and message.id == settings['reaction_role_message_id'] and emoji.name in reaction_roles:
         await user.remove_roles(discord.utils.get(message.guild.roles, id=reaction_roles[emoji.name]['role_id']))
-    # elif message.id == koth_message_id:
-    #     role = discord.utils.get(message.guild.roles, id=koth_ping_role_id)
-    #     await user.remove_roles(role)
+
 @bot.event
 async def on_raw_reaction_add(payload): # trigger on_reaction_add for all messages not just cached ones.
     channel = await bot.fetch_channel(payload.channel_id)
     await on_reaction_add(payload.emoji, await channel.fetch_message(payload.message_id), discord.utils.get(channel.guild.members,id=payload.user_id))
+
 @bot.event
 async def on_raw_reaction_remove(payload):
     channel = await bot.fetch_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
     user = discord.utils.get(channel.guild.members,id=payload.user_id)
     await on_reaction_remove(payload.emoji, message, user)
+
 @bot.slash_command()
 async def suggest(interaction, suggestion):
     if not suggestion_channel_id == -1:
@@ -434,38 +423,6 @@ async def suggest(interaction, suggestion):
         await interaction.response.send_message('Ötlet sikeresen közzétéve!')
     else:
         await interaction.response.send_message('Ez a parancs nincs beállítva!', ephemeral=True)
-# @bot.slash_command(description="Készít egy képernyőképet az adott URL-ről")
-# async def screenshot(interaction: discord.Interaction, url):
-#     if screenshot_command_enabled:
-#         if any(['porn' in url, 'xxx' in url, 'boob' in url, 'pussy' in url, 'cock' in url, 'dick' in url]):
-#             await interaction.response.send_message('Az NSFW ezen a szerveren nem engedélyezett!', ephemeral=True)
-
-#         await interaction.response.defer()
-#         options = webdriver.ChromeOptions()
-#         options.add_argument('--headless')  # A fej nélküli módban futtatás segíthet elkerülni az ablak megjelenítését
-#         options.add_argument("--disable-extensions")
-#         options.add_argument("--disable-gpu")
-#         options.add_argument("--no-sandbox")
-#         options.add_argument("--disable-dev-shm-usage")
-#         options.add_argument("--disable-popup-blocking")
-#         options.add_argument("--disable-cookie-encryption")
-#         options.add_argument("--disable-cookie-security")
-#         options.add_argument("--accept-cookies")  # Sütik elfogadása
-#         driver = webdriver.Chrome(service=webdriver.ChromeService(executable_path='/usr/local/bin/chromedriver'), options=options)
-#         driver.get(url)
-#         driver.save_screenshot('screenshot.png')
-#         driver.quit()
-
-#         file = discord.File('screenshot.png', filename='screenshot.png')
-#         embed = discord.Embed(title="Képernyőkép", description=f"Készítve az alábbi URL-ről: {url}", color=discord.Color.blue())
-#         embed.set_image(url="attachment://screenshot.png")
-#         if not bot.user.avatar == None:
-#             embed.set_footer(text=f"{server_name} Bot", icon_url=bot.user.avatar.url)
-#         else:
-#             embed.set_footer(text=f"{server_name} Bot")
-#         await interaction.followup.send(file=file, embed=embed)
-#     else:
-#         await interaction.response.send_message('Ez a parancs ki van kapcsolva!', ephemeral=True)
 
 async def close_ticket(interaction):
     channel = interaction.message.channel
@@ -483,7 +440,6 @@ async def close_ticket(interaction):
         transcript_channel = discord.utils.get(interaction.guild.channels, id=transcript_channel_id)
         transcript_embed = discord.Embed(title=f"Jegy #{channel.name.split('-')[1]} bezárva")
 
-        # transcript_embed.add_field(name="Jegy témája", value=..., inline=False)
         transcript_embed.add_field(name="Bezárta", value=closer.mention)
 
         await transcript_channel.send(embed=transcript_embed)
@@ -513,13 +469,9 @@ async def ticket(interaction: discord.Interaction, ticket_tema):
         await interaction.response.send_message('Ticket létrehozása sikertelen. Ticket kategória nincs beállítva.')
         return
     overwrites = {
-        # Make default not able to view this private channel
         interaction.guild.default_role: discord.PermissionOverwrite(read_messages=False, send_messages=False),
-        # Add the bot to the channel
         interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-        # add author to channel
-        interaction.user: discord.PermissionOverwrite(
-            read_messages=True, send_messages=True, attach_files=True)
+        interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True)
     }
     for role_id in ticket_support_role_ids:
         role = discord.utils.get(guild.roles, id=role_id)
@@ -528,31 +480,39 @@ async def ticket(interaction: discord.Interaction, ticket_tema):
                 read_messages=True, send_messages=True)
         else:
             print(f'Invalid rang ID találva a Ticket Support rangokhoz!\nID: {role_id}')
+
     if ticket_tema == "Partnerkedés" and not partner_manager_role_id == -1:
         overwrites[discord.utils.get(guild.roles, id=partner_manager_role_id)] = discord.PermissionOverwrite(
             read_messages=True, send_messages=True)
+
     with open('values.json', 'r') as file:
         values_json = json.loads(file.read())
         values_json['ticket_number'] += 1
         ticket_number = values_json['ticket_number']
+
     with open('values.json', 'w') as file:
         file.write(json.dumps(values_json, indent=4))
+
     channel = await guild.create_text_channel('jegy-'+str(ticket_number), category=ticket_category, overwrites=overwrites)
     await interaction.response.send_message(f'Ticket sikeresen megnyitva: <#{channel.id}>', ephemeral=True)
 
     view = discord.ui.View(timeout=None)
     embed = discord.Embed(title='Ticket Létrehozva!')
-    button = discord.ui.Button(
-        label='Ticket bezárása', custom_id=f'ticket_{ticket_number}_close_button')
+    button = discord.ui.Button(label='Ticket bezárása', custom_id=f'ticket_{ticket_number}_close_button')
+
     view.add_item(button)
     bot.add_view(view)
+
     embed.add_field(name='Ticket témája:',value=ticket_tema)
     embed.add_field(name='Létrehozója:', value=interaction.user.mention)
+
     if not bot.user.avatar == None:
         embed.set_footer(text=f"{server_name} Bot", icon_url=bot.user.avatar.url)
     else:
         embed.set_footer(text=f"{server_name} Bot")
+
     await channel.send(embed=embed, view=view)
+
     if not transcript_channel_id == -1:
         transcript_channel = discord.utils.get(interaction.guild.channels, id=transcript_channel_id)
         transcript_embed = discord.Embed(title=f"Jegy #{channel.name.split('-')[1]} létrehozva")
@@ -609,12 +569,15 @@ async def warn(interaction, member: discord.Member, *, reason='Ok nem megadva'):
         if not interaction.user.id == interaction.guild.owner_id and interaction.user.id in emergency_admin_ids and not interaction.user.top_role.position > member.top_role.position:
             await interaction.response.send_message("Nincs jogod ezt a felhasználót figyelmeztetni!", ephemeral=True)
             return
+
         if member.id in warns:
             warns[member.id].append(reason)
         else:
             warns[member.id] = [reason]
+
         await member.send(f'Figyelmeztetve lettél a következő okból: {reason}')
         await interaction.response.send_message(f'A figyelmeztetést elküldtem, a következő okból: {reason}')
+
         if len(warns[member.id]) == 2:
             await member.timeout(datetime.timedelta(hours=1))
         if len(warns[member.id]) == 3:
@@ -625,7 +588,8 @@ async def warn(interaction, member: discord.Member, *, reason='Ok nem megadva'):
             await member.timeout(datetime.timedelta(days=3))
         if len(warns[member.id]) == 6:
             await member.ban(reason='Elérte a 6 figyelmeztetést, ezért automatikusan bannoltam')
-        with open('warns.txt', 'w') as file:
+
+        with open('warns.json', 'w') as file:
             file.write(json.dumps(warns, indent=4))
 
     else:
@@ -927,6 +891,7 @@ async def autoclose(interaction, duration):
             await interaction.response.send_message('Ezt a parancsot csak ticketekben lehet használni!')
     else:
         await interaction.response.send_message("Nincs jogod használni ezt a parancsot!", ephemeral=True)
+
 if not settings['token'] == 'TOKEN':
     bot.run(settings['token'])
 else:

@@ -23,7 +23,6 @@
   "minecraft_server_domain_ip": "example.com",
   "private_minecraft_server_ip": "number.number.number.number",
   "private_minecraft_server_port": 25565,
-  "screenshot_command_enabled": false,
   "server_name": "",
   "token": ""
 }
