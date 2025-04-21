@@ -1,12 +1,10 @@
 {
   "log_channel_id": -1,
   "ticket_categories": [
-    ["⛔", "Hiba bejelentése"],
-    ["🏆", "TGF"],
-    ["🤡", "Csaló Jelentése"],
-    ["🎁", "Jutalom átvétele"],
-    ["❓", "Egyéb kérdések"],
-    ["🤝", "Partnerkedés"]
+    ["⛔", "Report Bugs"],
+    ["🎁", "Rewards"],
+    ["❓", "Other Questions"],
+    ["🤝", "Partners"]
   ],
   "join_channel_id": -1,
   "join_autorole_id": -1,
