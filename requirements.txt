@@ -1,4 +1,3 @@
 py-cord[voice]
 mcstatus
 pytz
-audioop-lts
